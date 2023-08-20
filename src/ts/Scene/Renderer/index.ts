@@ -26,14 +26,16 @@ export type CollectedLights = {[K in GLP.LightType]: LightInfo[]}
 
 type RenderOption = {
 	viewMatrix?: GLP.Matrix;
+	viewMatrixPrev?: GLP.Matrix;
 	projectionMatrix?: GLP.Matrix;
+	projectionMatrixPrev?: GLP.Matrix;
 	cameraMatrixWorld?: GLP.Matrix;
 	cameraNear?: number,
 	cameraFar?:number,
 	uniforms?: GLP.Uniforms,
 }
 
-type DrawOption = RenderOption & { modelMatrixWorld?: GLP.Matrix }
+type DrawOption = RenderOption & { modelMatrixWorld?: GLP.Matrix, modelMatrixWorldPrev?: GLP.Matrix }
 
 type GPUState = {
 	key: string,
@@ -270,7 +272,9 @@ export class Renderer extends GLP.Entity {
 
 			const renderOption: RenderOption = {
 				viewMatrix: cameraComponent.viewMatrix,
+				viewMatrixPrev: cameraComponent.viewMatrixPrev,
 				projectionMatrix: cameraComponent.projectionMatrix,
+				projectionMatrixPrev: cameraComponent.projectionMatrixPrev,
 				cameraMatrixWorld: cameraEntity.matrixWorld
 			};
 
@@ -350,7 +354,7 @@ export class Renderer extends GLP.Entity {
 			const material = entity.getComponent<GLP.Material>( "material" )!;
 			const geometry = entity.getComponent<GLP.Geometry>( "geometry" )!;
 
-			this.draw( entity.uuid.toString(), renderType, geometry, material, { ...renderOption, modelMatrixWorld: entity.matrixWorld } );
+			this.draw( entity.uuid.toString(), renderType, geometry, material, { ...renderOption, modelMatrixWorld: entity.matrixWorld, modelMatrixWorldPrev: entity.matrixWorldPrev } );
 
 		}
 
@@ -500,6 +504,12 @@ export class Renderer extends GLP.Entity {
 				program.setUniform( 'modelMatrix', 'Matrix4fv', option.modelMatrixWorld.elm );
 				program.setUniform( 'modelMatrixInverse', 'Matrix4fv', this.tmpModelMatrixInverse.copy( option.modelMatrixWorld ).inverse().elm );
 
+				if ( option.modelMatrixWorldPrev ) {
+
+					program.setUniform( 'modelMatrixPrev', 'Matrix4fv', option.modelMatrixWorldPrev.elm );
+
+				}
+
 				if ( option.viewMatrix ) {
 
 					this.tmpModelViewMatrix.copy( option.modelMatrixWorld ).preMultiply( option.viewMatrix );
@@ -519,10 +529,22 @@ export class Renderer extends GLP.Entity {
 
 			}
 
+			if ( option.viewMatrixPrev ) {
+
+				program.setUniform( 'viewMatrixPrev', 'Matrix4fv', option.viewMatrixPrev.elm );
+
+			}
+
 			if ( option.projectionMatrix ) {
 
 				program.setUniform( 'projectionMatrix', 'Matrix4fv', option.projectionMatrix.elm );
 				program.setUniform( 'projectionMatrixInverse', 'Matrix4fv', this.tmpProjectionMatrixInverse.copy( option.projectionMatrix ).inverse().elm );
+
+			}
+
+			if ( option.projectionMatrixPrev ) {
+
+				program.setUniform( 'projectionMatrixPrev', 'Matrix4fv', option.projectionMatrixPrev.elm );
 
 			}
 

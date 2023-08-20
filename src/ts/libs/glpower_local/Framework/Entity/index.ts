@@ -5,7 +5,7 @@ import { GPUCompute } from "../Component/GPUCompute";
 import { Geometry } from "../Component/Geometry";
 import { Light } from "../Component/Light";
 import { Material } from "../Component/Material";
-import { Matrix } from "../../Math/Matrix";
+import { Matrix, Matrix } from "../../Math/Matrix";
 import { Quaternion } from "../../Math/Quaternion";
 import { Vector } from "../../Math/Vector";
 import { EventEmitter } from "../../utils/EventEmitter";
@@ -36,6 +36,7 @@ export class Entity extends EventEmitter {
 
 	public matrix: Matrix;
 	public matrixWorld: Matrix;
+	public matrixWorldPrev: Matrix;
 
 	public parent: Entity | null;
 	public children: Entity[];
@@ -60,6 +61,7 @@ export class Entity extends EventEmitter {
 
 		this.matrix = new Matrix();
 		this.matrixWorld = new Matrix();
+		this.matrixWorldPrev = new Matrix();
 
 		this.parent = null;
 		this.children = [];
@@ -129,6 +131,8 @@ export class Entity extends EventEmitter {
 		// matrix
 
 		if ( ! event.matrix ) event.matrix = new Matrix();
+
+		this.matrixWorldPrev.copy( this.matrixWorld );
 
 		this.matrix.setFromTransform( this.position, this.quaternion, this.scale );
 

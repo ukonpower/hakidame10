@@ -1,10 +1,8 @@
-import { connected } from "process";
 import { FCurve } from "../../Animation/FCurve";
 import { FCurveGroup } from "../../Animation/FCurveGroup";
 import { FCurveKeyFrame, FCurveInterpolation } from "../../Animation/FCurveKeyFrame";
 import { IVector3, IVector2, Vector } from "../../Math/Vector";
 import { EventEmitter } from "../../utils/EventEmitter";
-import { log } from "console";
 
 export type BLidgeNodeType = 'empty' | 'cube' | 'sphere' | 'cylinder' | 'mesh' | 'camera' | 'plane' | 'light';
 

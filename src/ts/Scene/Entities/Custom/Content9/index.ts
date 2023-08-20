@@ -18,7 +18,7 @@ export class Content extends GLP.Entity {
 			frag: hotGet( 'contentFrag', contentFrag )
 		} ) );
 
-		this.addComponent( "turnTable", new TurnTable() );
+		this.addComponent( "turnTable", new TurnTable( - 3 ) );
 
 		if ( import.meta.hot ) {
 

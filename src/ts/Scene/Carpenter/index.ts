@@ -68,7 +68,7 @@ export class Carpenter extends GLP.EventEmitter {
 				const cameraParam = node.param as GLP.BLidgeCameraParam;
 				const renderCamera = this.camera.getComponent<GLP.RenderCamera>( "camera" )!;
 				renderCamera.fov = cameraParam.fov;
-				renderCamera.updateProjectionMatrix();
+				renderCamera.needsUpdate = true;
 
 			}
 

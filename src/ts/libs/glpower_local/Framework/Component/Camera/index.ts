@@ -1,5 +1,5 @@
 import { Component, ComponentUpdateEvent } from "..";
-import { Matrix } from "../../../Math/Matrix";
+import { Matrix, Matrix } from "../../../Math/Matrix";
 import { Vector } from "../../../Math/Vector";
 
 export type CameraType = 'perspective' | 'orthographic'
@@ -26,7 +26,11 @@ export class Camera extends Component {
 
 	public projectionMatrix: Matrix;
 	public viewMatrix: Matrix;
-	public projectionViewMatrix: Matrix;
+
+	public projectionMatrixPrev: Matrix;
+	public viewMatrixPrev: Matrix;
+
+	public needsUpdate: boolean;
 
 	public frustum: Vector[];
 
@@ -40,7 +44,11 @@ export class Camera extends Component {
 
 		this.viewMatrix = new Matrix();
 		this.projectionMatrix = new Matrix();
-		this.projectionViewMatrix = new Matrix();
+
+		this.viewMatrixPrev = new Matrix();
+		this.projectionMatrixPrev = new Matrix();
+
+		this.needsUpdate = false;
 
 		this.fov = param.fov || 50;
 		this.near = param.near || 0.01;
@@ -49,8 +57,6 @@ export class Camera extends Component {
 
 		this.orthWidth = param.orthWidth || 1;
 		this.orthHeight = param.orthHeight || 1;
-
-
 
 		this.frustum = [
 			new Vector(),
@@ -62,11 +68,13 @@ export class Camera extends Component {
 			new Vector(),
 		];
 
-		this.updateProjectionMatrix();
+		this.needsUpdate = true;
 
 	}
 
 	public updateProjectionMatrix() {
+
+		this.projectionMatrixPrev.copy( this.projectionMatrix );
 
 		if ( this.cameraType == 'perspective' ) {
 
@@ -78,19 +86,23 @@ export class Camera extends Component {
 
 		}
 
+		this.needsUpdate = false;
+
 	}
 
 	protected updateImpl( event: ComponentUpdateEvent ): void {
 
-		this.viewMatrix.copy( event.entity.matrixWorld ).inverse();
-		this.projectionViewMatrix.copy( this.viewMatrix ).multiply( this.projectionMatrix );
+		this.viewMatrixPrev.copy( this.viewMatrix );
 
-		this.frustum[ 0 ].set( this.projectionMatrix.elm[ 0 ] + this.projectionMatrix.elm[ 0 ], this.projectionMatrix.elm[ 1 ] + this.projectionMatrix.elm[ 1 ], this.projectionMatrix.elm[ 2 ] + this.projectionMatrix.elm[ 2 ], this.projectionMatrix.elm[ 3 ] + this.projectionMatrix.elm[ 3 ] );
-		this.frustum[ 1 ].set( this.projectionMatrix.elm[ 0 ] + this.projectionMatrix.elm[ 0 ], this.projectionMatrix.elm[ 1 ] + this.projectionMatrix.elm[ 1 ], this.projectionMatrix.elm[ 2 ] + this.projectionMatrix.elm[ 2 ], this.projectionMatrix.elm[ 3 ] + this.projectionMatrix.elm[ 3 ] );
-		this.frustum[ 2 ].set( this.projectionMatrix.elm[ 4 ] + this.projectionMatrix.elm[ 0 ], this.projectionMatrix.elm[ 5 ] + this.projectionMatrix.elm[ 1 ], this.projectionMatrix.elm[ 6 ] + this.projectionMatrix.elm[ 2 ], this.projectionMatrix.elm[ 7 ] + this.projectionMatrix.elm[ 3 ] );
-		this.frustum[ 3 ].set( this.projectionMatrix.elm[ 4 ] + this.projectionMatrix.elm[ 0 ], this.projectionMatrix.elm[ 5 ] + this.projectionMatrix.elm[ 1 ], this.projectionMatrix.elm[ 6 ] + this.projectionMatrix.elm[ 2 ], this.projectionMatrix.elm[ 7 ] + this.projectionMatrix.elm[ 3 ] );
-		this.frustum[ 4 ].set( this.projectionMatrix.elm[ 8 ] + this.projectionMatrix.elm[ 0 ], this.projectionMatrix.elm[ 9 ] + this.projectionMatrix.elm[ 1 ], this.projectionMatrix.elm[ 10 ] + this.projectionMatrix.elm[ 2 ], this.projectionMatrix.elm[ 11 ] + this.projectionMatrix.elm[ 3 ] );
-		this.frustum[ 5 ].set( this.projectionMatrix.elm[ 12 ] + this.projectionMatrix.elm[ 0 ], this.projectionMatrix.elm[ 13 ] + this.projectionMatrix.elm[ 1 ], this.projectionMatrix.elm[ 14 ] + this.projectionMatrix.elm[ 2 ], this.projectionMatrix.elm[ 15 ] + this.projectionMatrix.elm[ 3 ] );
+		this.viewMatrix.copy( event.entity.matrixWorld ).inverse();
+
+		this.projectionMatrixPrev.copy( this.projectionMatrix );
+
+		if ( this.needsUpdate ) {
+
+			this.updateProjectionMatrix();
+
+		}
 
 	}
 
