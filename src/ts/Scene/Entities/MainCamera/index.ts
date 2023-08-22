@@ -12,6 +12,7 @@ import ssaoFrag from './shaders/ssao.fs';
 import dofCoc from './shaders/dofCoc.fs';
 import dofComposite from './shaders/dofComposite.fs';
 import dofBokeh from './shaders/dofBokeh.fs';
+import motionBlurFrag from './shaders/motionBlur.fs';
 import ssCompositeFrag from './shaders/ssComposite.fs';
 import compositeFrag from './shaders/composite.fs';
 import { OrbitControls } from '../../Components/OrbitControls';
@@ -73,9 +74,14 @@ export class MainCamera extends GLP.Entity {
 	public dofCoc: GLP.PostProcessPass;
 	public dofBokeh: GLP.PostProcessPass;
 	public dofComposite: GLP.PostProcessPass;
+
 	public rtDofCoc: GLP.GLPowerFrameBuffer;
 	public rtDofBokeh: GLP.GLPowerFrameBuffer;
 	public rtDofComposite: GLP.GLPowerFrameBuffer;
+
+	// motion blur
+
+	private motionBlur: GLP.PostProcessPass;
 
 	// composite
 
@@ -142,13 +148,13 @@ export class MainCamera extends GLP.Entity {
 		this.rtLightShaft1 = new GLP.GLPowerFrameBuffer( gl ).setTexture( [
 			power.createTexture().setting( { magFilter: gl.LINEAR, minFilter: gl.LINEAR } ),
 		] );
+
 		this.rtLightShaft2 = new GLP.GLPowerFrameBuffer( gl ).setTexture( [
 			power.createTexture().setting( { magFilter: gl.LINEAR, minFilter: gl.LINEAR } ),
 		] );
 
 		this.lightShaft = new GLP.PostProcessPass( {
 			name: 'lightShaft',
-			input: [],
 			frag: lightShaftFrag,
 			renderTarget: this.rtLightShaft1,
 			uniforms: GLP.UniformsUtils.merge( globalUniforms.time, {
@@ -161,6 +167,7 @@ export class MainCamera extends GLP.Entity {
 					type: '1i'
 				},
 			} ),
+			resolutionFactor: 0.5,
 		} );
 
 		// ssr
@@ -175,7 +182,6 @@ export class MainCamera extends GLP.Entity {
 
 		this.ssr = new GLP.PostProcessPass( {
 			name: 'ssr',
-			input: [ param.renderTarget.gBuffer.textures[ 0 ], param.renderTarget.gBuffer.textures[ 1 ] ],
 			frag: ssrFrag,
 			renderTarget: this.rtSSR1,
 			uniforms: GLP.UniformsUtils.merge( globalUniforms.time, {
@@ -186,6 +192,14 @@ export class MainCamera extends GLP.Entity {
 				uResolutionInv: {
 					value: this.resolutionInv,
 					type: '2fv',
+				},
+				uGbufferPos: {
+					value: param.renderTarget.gBuffer.textures[ 0 ],
+					type: '1i'
+				},
+				uGbufferNormal: {
+					value: param.renderTarget.gBuffer.textures[ 1 ],
+					type: '1i'
 				},
 				uSceneTex: {
 					value: param.renderTarget.forwardBuffer.textures[ 0 ],
@@ -200,6 +214,7 @@ export class MainCamera extends GLP.Entity {
 					type: '1i'
 				},
 			} ),
+			resolutionFactor: 0.5,
 		} );
 
 		// ssao
@@ -214,7 +229,6 @@ export class MainCamera extends GLP.Entity {
 
 		this.ssao = new GLP.PostProcessPass( {
 			name: 'ssao',
-			input: [ param.renderTarget.gBuffer.textures[ 0 ], param.renderTarget.gBuffer.textures[ 1 ] ],
 			frag: ssaoFrag,
 			renderTarget: this.rtSSAO1,
 			uniforms: GLP.UniformsUtils.merge( globalUniforms.time, {
@@ -226,8 +240,12 @@ export class MainCamera extends GLP.Entity {
 					value: this.resolutionInv,
 					type: '2fv',
 				},
-				uSceneTex: {
-					value: param.renderTarget.forwardBuffer.textures[ 0 ],
+				uGbufferPos: {
+					value: param.renderTarget.gBuffer.textures[ 0 ],
+					type: '1i'
+				},
+				uGbufferNormal: {
+					value: param.renderTarget.gBuffer.textures[ 1 ],
 					type: '1i'
 				},
 				uSSAOBackBuffer: {
@@ -245,9 +263,20 @@ export class MainCamera extends GLP.Entity {
 
 		this.ssComposite = new GLP.PostProcessPass( {
 			name: 'ssComposite',
-			input: [ param.renderTarget.gBuffer.textures[ 0 ], param.renderTarget.gBuffer.textures[ 1 ], param.renderTarget.forwardBuffer.textures[ 0 ] ],
 			frag: ssCompositeFrag,
 			uniforms: GLP.UniformsUtils.merge( this.commonUniforms, {
+				uGbufferPos: {
+					value: param.renderTarget.gBuffer.textures[ 0 ],
+					type: '1i'
+				},
+				uGbufferNormal: {
+					value: param.renderTarget.gBuffer.textures[ 1 ],
+					type: '1i'
+				},
+				uShadingBuffer: {
+					value: param.renderTarget.forwardBuffer.textures[ 0 ],
+					type: '1i'
+				},
 				uLightShaftTexture: {
 					value: this.rtLightShaft2.textures[ 0 ],
 					type: '1i'
@@ -261,7 +290,7 @@ export class MainCamera extends GLP.Entity {
 					type: '1i'
 				},
 			} ),
-			renderTarget: this.rt1
+			renderTarget: null
 		} );
 
 		// dof
@@ -314,6 +343,18 @@ export class MainCamera extends GLP.Entity {
 			uniforms: GLP.UniformsUtils.merge( {} ),
 			renderTarget: this.rtDofComposite
 		} );
+
+		// motion blur
+
+		this.motionBlur = new GLP.PostProcessPass( {
+			name: 'motionBlur',
+			input: [ param.renderTarget.gBuffer.textures[ 4 ] ],
+			frag: motionBlurFrag,
+			uniforms: GLP.UniformsUtils.merge( {} ),
+			renderTarget: this.rtDofComposite
+		} );
+
+
 
 		// fxaa
 
@@ -440,9 +481,6 @@ export class MainCamera extends GLP.Entity {
 			renderTarget: null
 		} );
 
-		// DEBUG
-		// this.composite.input = [ param.renderTarget.deferredBuffer.textures[ 0 ] ];
-
 		this.addComponent( "postprocess", new GLP.PostProcess( {
 			input: param.renderTarget.gBuffer.textures,
 			passes: [
@@ -450,13 +488,13 @@ export class MainCamera extends GLP.Entity {
 				this.ssr,
 				this.ssao,
 				this.ssComposite,
-				this.dofCoc,
-				this.dofBokeh,
-				this.dofComposite,
-				this.fxaa,
-				this.bloomBright,
-				...this.bloomBlur,
-				this.composite,
+				// this.dofCoc,
+				// this.dofBokeh,
+				// this.dofComposite,
+				// this.fxaa,
+				// this.bloomBright,
+				// ...this.bloomBlur,
+				// this.composite,
 			] } )
 		);
 
@@ -566,7 +604,7 @@ export class MainCamera extends GLP.Entity {
 		this.rtSSR1 = this.rtSSR2;
 		this.rtSSR2 = tmp;
 
-		this.ssr.renderTarget = this.rtSSR1;
+		this.ssr.renderTarget = null;
 		this.ssComposite.uniforms.uSSRTexture.value = this.rtSSR1.textures[ 0 ];
 		this.ssr.uniforms.uSSRBackBuffer.value = this.rtSSR2.textures[ 0 ];
 
@@ -610,8 +648,8 @@ export class MainCamera extends GLP.Entity {
 
 		}
 
-		this.rtLightShaft1.setSize( e.resolution );
-		this.rtLightShaft2.setSize( e.resolution );
+		// this.rtLightShaft1.setSize( e.resolution );
+		// this.rtLightShaft2.setSize( e.resolution );
 
 		this.rtSSR1.setSize( resolutionHalf );
 		this.rtSSR2.setSize( resolutionHalf );

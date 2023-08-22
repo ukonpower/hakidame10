@@ -5,8 +5,8 @@
 
 // uniforms
 
-uniform sampler2D sampler0;
-uniform sampler2D sampler1;
+uniform sampler2D uGbufferPos;
+uniform sampler2D uGbufferNormal;
 uniform sampler2D uSceneTex;
 uniform sampler2D uSSAOBackBuffer;
 uniform sampler2D uDepthTexture;
@@ -31,12 +31,12 @@ void main( void ) {
 
 	vec3 lightShaftSum = vec3( 0.0 );
 
-	vec3 rayPos = texture( sampler0, vUv ).xyz;
+	vec3 rayPos = texture( uGbufferPos, vUv ).xyz;
 	vec4 rayViewPos = viewMatrix * vec4(rayPos, 1.0);
 
 	if( rayPos.x + rayPos.y + rayPos.z == 0.0 ) return;
 
-	vec3 normal = texture( sampler1, vUv ).xyz;
+	vec3 normal = texture( uGbufferNormal, vUv ).xyz;
 	float occlusion = 0.0;
 
 	for( int i = 0; i < SAMPLE; i ++ ) {

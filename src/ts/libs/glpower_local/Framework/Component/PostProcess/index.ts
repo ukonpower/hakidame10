@@ -1,4 +1,4 @@
-import { Component } from '..';
+import { Component, ComponentResizeEvent } from '..';
 import { GLPowerTexture } from '../../../GLPowerTexture';
 import { PostProcessPass } from '../PostProcessPass';
 
@@ -21,6 +21,16 @@ export class PostProcess extends Component {
 		this.uuid = postProcessId ++;
 
 		this.passes = param.passes;
+
+	}
+
+	protected resizeImpl( event: ComponentResizeEvent ): void {
+
+		for ( let i = 0; i < this.passes.length; i ++ ) {
+
+			this.passes[ i ].resize( event );
+
+		}
 
 	}
 

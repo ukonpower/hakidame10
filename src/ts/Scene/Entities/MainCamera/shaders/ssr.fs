@@ -5,8 +5,8 @@
 
 // uniforms
 
-uniform sampler2D sampler0;
-uniform sampler2D sampler1;
+uniform sampler2D uGbufferPos;
+uniform sampler2D uGbufferNormal;
 uniform sampler2D uSceneTex;
 uniform sampler2D uSSRBackBuffer;
 uniform sampler2D uDepthTexture;
@@ -32,7 +32,7 @@ void main( void ) {
 
 	vec3 lightShaftSum = vec3( 0.0 );
 
-	vec3 rayPos = texture( sampler0, vUv ).xyz;
+	vec3 rayPos = texture( uGbufferPos, vUv ).xyz;
 	vec4 rayViewPos = viewMatrix * vec4(rayPos, 1.0);
 	vec4 depthRayPos = projectionMatrixInverse * vec4( vUv * 2.0 - 1.0, texture( uDepthTexture, vUv ).x * 2.0 - 1.0, 1.0 );
 	depthRayPos.xyz /=depthRayPos.w;
@@ -46,7 +46,7 @@ void main( void ) {
 
 	if( rayPos.x + rayPos.y + rayPos.z == 0.0 ) return;
 
-	vec3 rayDir = reflect( normalize( ( cameraMatrix * projectionMatrixInverse * vec4( vUv * 2.0 - 1.0, 1.0, 1.0 ) ).xyz ), texture( sampler1, vUv ).xyz ) ;
+	vec3 rayDir = reflect( normalize( ( cameraMatrix * projectionMatrixInverse * vec4( vUv * 2.0 - 1.0, 1.0, 1.0 ) ).xyz ), texture( uGbufferNormal, vUv ).xyz ) ;
 
 	float rayStepLength = LENGTH / MARCH;
 	vec3 rayStep = rayDir * rayStepLength;

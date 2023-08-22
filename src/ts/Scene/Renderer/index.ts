@@ -1,6 +1,6 @@
 import * as GLP from 'glpower';
 
-import { gl, gpuState, power } from "~/ts/Globals";
+import { gl, gl, gpuState, power } from "~/ts/Globals";
 import { ProgramManager } from "./ProgramManager";
 import { shaderParse } from "./ShaderParser";
 import { DeferredPostProcess } from './DeferredPostProcess';
@@ -393,6 +393,7 @@ export class Renderer extends GLP.Entity {
 		for ( let i = 0; i < postprocess.passes.length; i ++ ) {
 
 			const pass = postprocess.passes[ i ];
+			const prevPass = postprocess.passes[ i - 1 ];
 
 			const renderTarget = pass.renderTarget;
 
@@ -433,18 +434,14 @@ export class Renderer extends GLP.Entity {
 
 			}
 
-			if ( pass.input ) {
+			if ( prevPass && prevPass.renderTarget ) {
 
-				for ( let i = 0; i < pass.input.length; i ++ ) {
+				for ( let i = 0; i < prevPass.renderTarget.textures.length; i ++ ) {
 
-					if ( pass.input ) {
-
-						pass.uniforms[ 'sampler' + i ] = {
-							type: '1i',
-							value: pass.input[ i ]
-						};
-
-					}
+					pass.uniforms[ 'sampler' + i ] = {
+						type: '1i',
+						value: prevPass.renderTarget.textures[ i ]
+					};
 
 				}
 

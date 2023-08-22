@@ -43,7 +43,15 @@ export class DeferredPostProcess extends GLP.PostProcess {
 
 	public setRenderTarget( renderTarget: RenderCameraTarget ) {
 
-		this.shading.input = renderTarget.gBuffer.textures;
+		renderTarget.gBuffer.textures.forEach( ( tex, index ) => {
+
+			this.shading.uniforms[ "sampler" + index ] = {
+				type: '1i',
+				value: tex
+			};
+
+		} );
+
 		this.shading.renderTarget = renderTarget.deferredBuffer;
 
 	}
