@@ -26,12 +26,6 @@ export class MainCamera extends GLP.Entity {
 
 	private baseFov: number;
 
-	// common rendertarget
-
-	private rt1: GLP.GLPowerFrameBuffer;
-	private rt2: GLP.GLPowerFrameBuffer;
-	private rt3: GLP.GLPowerFrameBuffer;
-
 	// fxaa
 
 	private fxaa: GLP.PostProcessPass;
@@ -74,10 +68,6 @@ export class MainCamera extends GLP.Entity {
 	public dofCoc: GLP.PostProcessPass;
 	public dofBokeh: GLP.PostProcessPass;
 	public dofComposite: GLP.PostProcessPass;
-
-	public rtDofCoc: GLP.GLPowerFrameBuffer;
-	public rtDofBokeh: GLP.GLPowerFrameBuffer;
-	public rtDofComposite: GLP.GLPowerFrameBuffer;
 
 	// motion blur
 
@@ -124,12 +114,6 @@ export class MainCamera extends GLP.Entity {
 		this.resolutionInv = new GLP.Vector();
 		this.resolutionBloom = [];
 
-		// rt
-
-		this.rt1 = new GLP.GLPowerFrameBuffer( gl ).setTexture( [ power.createTexture() ] );
-		this.rt2 = new GLP.GLPowerFrameBuffer( gl ).setTexture( [ power.createTexture() ] );
-		this.rt3 = new GLP.GLPowerFrameBuffer( gl ).setTexture( [ power.createTexture() ] );
-
 		// uniforms
 
 		this.commonUniforms = GLP.UniformsUtils.merge( {
@@ -168,6 +152,7 @@ export class MainCamera extends GLP.Entity {
 				},
 			} ),
 			resolutionFactor: 0.5,
+			passThrough: true,
 		} );
 
 		// ssr
@@ -215,6 +200,7 @@ export class MainCamera extends GLP.Entity {
 				},
 			} ),
 			resolutionFactor: 0.5,
+			passThrough: true,
 		} );
 
 		// ssao
@@ -257,6 +243,8 @@ export class MainCamera extends GLP.Entity {
 					type: '1i'
 				},
 			} ),
+			resolutionFactor: 0.2,
+			passThrough: true,
 		} );
 
 		// ss-composite
@@ -290,80 +278,83 @@ export class MainCamera extends GLP.Entity {
 					type: '1i'
 				},
 			} ),
-			renderTarget: null
 		} );
 
 		// dof
-
-		this.rtDofCoc = new GLP.GLPowerFrameBuffer( gl ).setTexture( [
-			power.createTexture().setting( { magFilter: gl.LINEAR, minFilter: gl.LINEAR, internalFormat: gl.RGBA16F, type: gl.HALF_FLOAT, format: gl.RGBA } ),
-		] );
-
-		this.rtDofComposite = new GLP.GLPowerFrameBuffer( gl ).setTexture( [
-			power.createTexture().setting( { magFilter: gl.LINEAR, minFilter: gl.LINEAR, internalFormat: gl.RGBA16F, type: gl.HALF_FLOAT, format: gl.RGBA } ),
-		] );
-
-		this.rtDofBokeh = new GLP.GLPowerFrameBuffer( gl ).setTexture( [
-			power.createTexture().setting( { magFilter: gl.LINEAR, minFilter: gl.LINEAR } ),
-		] );
 
 		this.dofTarget = null;
 		this.dofParams = new GLP.Vector( 10, 0.05, 20, 0.05 );
 
 		this.dofCoc = new GLP.PostProcessPass( {
 			name: 'dof/coc',
-			input: [ this.rt1.textures[ 0 ], param.renderTarget.gBuffer.depthTexture ],
 			frag: dofCoc,
 			uniforms: GLP.UniformsUtils.merge( globalUniforms.time, {
+				uDepthTex: {
+					value: param.renderTarget.gBuffer.depthTexture,
+					type: "1i"
+				},
 				uParams: {
 					value: this.dofParams,
 					type: '4f'
 				},
 			} ),
-			renderTarget: this.rtDofCoc,
+			renderTarget: new GLP.GLPowerFrameBuffer( gl ).setTexture( [
+				power.createTexture().setting( { magFilter: gl.LINEAR, minFilter: gl.LINEAR, internalFormat: gl.RGBA16F, type: gl.HALF_FLOAT, format: gl.RGBA } ),
+			] ),
+			passThrough: true,
+			resolutionFactor: 0.5,
 		} );
 
 		this.dofBokeh = new GLP.PostProcessPass( {
 			name: 'dof/bokeh',
-			input: [ this.rtDofCoc.textures[ 0 ] ],
 			frag: dofBokeh,
 			uniforms: GLP.UniformsUtils.merge( globalUniforms.time, {
+				uCocTex: {
+					value: this.dofCoc.renderTarget!.textures[ 0 ],
+					type: '1i'
+				},
 				uParams: {
 					value: this.dofParams,
 					type: '4f'
 				}
 			} ),
-			renderTarget: this.rtDofBokeh
+			renderTarget: new GLP.GLPowerFrameBuffer( gl ).setTexture( [
+				power.createTexture().setting( { magFilter: gl.LINEAR, minFilter: gl.LINEAR } ),
+			] ),
+			passThrough: true,
+			resolutionFactor: 0.5,
 		} );
 
 		this.dofComposite = new GLP.PostProcessPass( {
 			name: 'dof/composite',
-			input: [ this.rt1.textures[ 0 ], this.rtDofBokeh.textures[ 0 ] ],
 			frag: dofComposite,
-			uniforms: GLP.UniformsUtils.merge( {} ),
-			renderTarget: this.rtDofComposite
+			uniforms: GLP.UniformsUtils.merge( {
+				uBokeTex: {
+					value: this.dofBokeh.renderTarget!.textures[ 0 ],
+					type: '1i'
+				}
+			} ),
+			renderTarget: new GLP.GLPowerFrameBuffer( gl ).setTexture( [
+				power.createTexture().setting( { magFilter: gl.LINEAR, minFilter: gl.LINEAR, internalFormat: gl.RGBA16F, type: gl.HALF_FLOAT, format: gl.RGBA } ),
+			] )
 		} );
 
 		// motion blur
 
-		this.motionBlur = new GLP.PostProcessPass( {
-			name: 'motionBlur',
-			input: [ param.renderTarget.gBuffer.textures[ 4 ] ],
-			frag: motionBlurFrag,
-			uniforms: GLP.UniformsUtils.merge( {} ),
-			renderTarget: this.rtDofComposite
-		} );
-
-
+		// this.motionBlur = new GLP.PostProcessPass( {
+		// 	name: 'motionBlur',
+		// 	input: [ param.renderTarget.gBuffer.textures[ 4 ] ],
+		// 	frag: motionBlurFrag,
+		// 	uniforms: GLP.UniformsUtils.merge( {} ),
+		// 	renderTarget: this.rtDofComposite
+		// } );
 
 		// fxaa
 
 		this.fxaa = new GLP.PostProcessPass( {
 			name: 'fxaa',
-			input: [ this.rtDofComposite.textures[ 0 ] ],
 			frag: fxaaFrag,
 			uniforms: this.commonUniforms,
-			renderTarget: this.rt1
 		} );
 
 		// bloom
@@ -387,7 +378,6 @@ export class MainCamera extends GLP.Entity {
 
 		this.bloomBright = new GLP.PostProcessPass( {
 			name: 'bloom/bright/',
-			input: this.rt1.textures,
 			frag: bloomBrightFrag,
 			uniforms: GLP.UniformsUtils.merge( globalUniforms.time, {
 				threshold: {
@@ -395,14 +385,14 @@ export class MainCamera extends GLP.Entity {
 					value: 0.5,
 				},
 			} ),
-			renderTarget: this.rt2
+			passThrough: true,
 		} );
 
 		this.bloomBlur = [];
 
 		// bloom blur
 
-		let bloomInput: GLP.GLPowerTexture[] = this.rt2.textures;
+		let bloomInput: GLP.GLPowerTexture[] = this.bloomBright.renderTarget!.textures;
 
 		for ( let i = 0; i < this.bloomRenderCount; i ++ ) {
 
@@ -414,10 +404,14 @@ export class MainCamera extends GLP.Entity {
 
 			this.bloomBlur.push( new GLP.PostProcessPass( {
 				name: 'bloom/blur/' + i + '/v',
-				input: bloomInput,
+				// input: bloomInput,
 				renderTarget: rtVertical,
 				frag: bloomBlurFrag,
 				uniforms: {
+					uBackBlurTex: {
+						value: bloomInput,
+						type: '1i'
+					},
 					uIsVertical: {
 						type: '1i',
 						value: true
@@ -433,15 +427,19 @@ export class MainCamera extends GLP.Entity {
 				},
 				defines: {
 					GAUSS_WEIGHTS: this.bloomRenderCount.toString()
-				}
+				},
+				passThrough: true,
 			} ) );
 
 			this.bloomBlur.push( new GLP.PostProcessPass( {
 				name: 'bloom/blur/' + i + '/w',
-				input: rtVertical.textures,
 				renderTarget: rtHorizonal,
 				frag: bloomBlurFrag,
 				uniforms: {
+					uBackBlurTex: {
+						value: rtVertical.textures[ 0 ],
+						type: '1i'
+					},
 					uIsVertical: {
 						type: '1i',
 						value: false
@@ -457,7 +455,9 @@ export class MainCamera extends GLP.Entity {
 				},
 				defines: {
 					GAUSS_WEIGHTS: this.bloomRenderCount.toString()
-				} } ) );
+				},
+				passThrough: true,
+			} ) );
 
 			bloomInput = rtHorizonal.textures;
 
@@ -467,7 +467,6 @@ export class MainCamera extends GLP.Entity {
 
 		this.composite = new GLP.PostProcessPass( {
 			name: 'dof/bokeh',
-			input: [ this.rt1.textures[ 0 ] ],
 			frag: compositeFrag,
 			uniforms: GLP.UniformsUtils.merge( this.commonUniforms, {
 				uBloomTexture: {
@@ -482,19 +481,19 @@ export class MainCamera extends GLP.Entity {
 		} );
 
 		this.addComponent( "postprocess", new GLP.PostProcess( {
-			input: param.renderTarget.gBuffer.textures,
+			input: param.renderTarget.forwardBuffer.textures,
 			passes: [
 				this.lightShaft,
 				this.ssr,
 				this.ssao,
 				this.ssComposite,
-				// this.dofCoc,
-				// this.dofBokeh,
-				// this.dofComposite,
-				// this.fxaa,
-				// this.bloomBright,
-				// ...this.bloomBlur,
-				// this.composite,
+				this.dofCoc,
+				this.dofBokeh,
+				this.dofComposite,
+				this.fxaa,
+				this.bloomBright,
+				...this.bloomBlur,
+				this.composite,
 			] } )
 		);
 
@@ -582,7 +581,7 @@ export class MainCamera extends GLP.Entity {
 		const focusDistance = this.tmpVector1.sub( this.tmpVector2 ).length();
 		const kFilmHeight = 0.012;
 		const flocalLength = 0.5 * kFilmHeight / Math.tan( 0.5 * ( fov / 180 * Math.PI ) );
-		const maxCoc = 1 / this.rtDofBokeh.size.y * 4;
+		const maxCoc = 1 / this.dofBokeh.renderTarget!.size.y * 4;
 		const rcpMaxCoC = 1.0 / maxCoc;
 		const coeff = flocalLength * flocalLength / ( 0.3 * ( focusDistance - flocalLength ) * kFilmHeight * 2.0 );
 
@@ -604,7 +603,7 @@ export class MainCamera extends GLP.Entity {
 		this.rtSSR1 = this.rtSSR2;
 		this.rtSSR2 = tmp;
 
-		this.ssr.renderTarget = null;
+		this.ssr.renderTarget = this.rtSSR1;
 		this.ssComposite.uniforms.uSSRTexture.value = this.rtSSR1.textures[ 0 ];
 		this.ssr.uniforms.uSSRBackBuffer.value = this.rtSSR2.textures[ 0 ];
 
@@ -629,10 +628,6 @@ export class MainCamera extends GLP.Entity {
 		resolutionHalf.x = Math.max( Math.floor( resolutionHalf.x ), 1.0 );
 		resolutionHalf.y = Math.max( Math.floor( resolutionHalf.y ), 1.0 );
 
-		this.rt1.setSize( e.resolution );
-		this.rt2.setSize( e.resolution );
-		this.rt3.setSize( e.resolution );
-
 		this.updateCameraParams( this.resolution );
 
 		let scale = 2;
@@ -640,7 +635,6 @@ export class MainCamera extends GLP.Entity {
 		for ( let i = 0; i < this.bloomRenderCount; i ++ ) {
 
 			this.resolutionBloom[ i ].copy( e.resolution ).multiply( 1.0 / scale );
-
 			this.rtBloomHorizonal[ i ].setSize( this.resolutionBloom[ i ] );
 			this.rtBloomVertical[ i ].setSize( this.resolutionBloom[ i ] );
 
@@ -648,18 +642,14 @@ export class MainCamera extends GLP.Entity {
 
 		}
 
-		// this.rtLightShaft1.setSize( e.resolution );
-		// this.rtLightShaft2.setSize( e.resolution );
+		this.rtLightShaft1.setSize( e.resolution );
+		this.rtLightShaft2.setSize( e.resolution );
 
 		this.rtSSR1.setSize( resolutionHalf );
 		this.rtSSR2.setSize( resolutionHalf );
 
-		this.rtSSAO1.setSize( resolutionHalf.sub( 32 ) );
-		this.rtSSAO2.setSize( resolutionHalf.sub( 32 ) );
-
-		this.rtDofCoc.setSize( resolutionHalf );
-		this.rtDofBokeh.setSize( resolutionHalf );
-		this.rtDofComposite.setSize( this.resolution );
+		this.rtSSAO1.setSize( resolutionHalf );
+		this.rtSSAO2.setSize( resolutionHalf );
 
 	}
 

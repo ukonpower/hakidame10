@@ -13,6 +13,7 @@ export class PostProcess extends Component {
 
 	public uuid: number;
 	public passes: PostProcessPass[];
+	public input: GLPowerTexture[];
 
 	constructor( param: PostProcessParam ) {
 
@@ -21,6 +22,8 @@ export class PostProcess extends Component {
 		this.uuid = postProcessId ++;
 
 		this.passes = param.passes;
+
+		this.input = param.input || [];
 
 	}
 

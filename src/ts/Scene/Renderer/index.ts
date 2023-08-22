@@ -390,10 +390,11 @@ export class Renderer extends GLP.Entity {
 
 		// render
 
+		let backbuffers: GLP.GLPowerTexture[] | null = postprocess.input;
+
 		for ( let i = 0; i < postprocess.passes.length; i ++ ) {
 
 			const pass = postprocess.passes[ i ];
-			const prevPass = postprocess.passes[ i - 1 ];
 
 			const renderTarget = pass.renderTarget;
 
@@ -434,13 +435,13 @@ export class Renderer extends GLP.Entity {
 
 			}
 
-			if ( prevPass && prevPass.renderTarget ) {
+			if ( backbuffers ) {
 
-				for ( let i = 0; i < prevPass.renderTarget.textures.length; i ++ ) {
+				for ( let i = 0; i < backbuffers.length; i ++ ) {
 
-					pass.uniforms[ 'sampler' + i ] = {
+					pass.uniforms[ 'backbuffer' + i ] = {
 						type: '1i',
-						value: prevPass.renderTarget.textures[ i ]
+						value: backbuffers[ i ]
 					};
 
 				}
@@ -450,6 +451,12 @@ export class Renderer extends GLP.Entity {
 			this.draw( postprocess.uuid.toString(), "postprocess", this.quad, pass, matrix );
 
 			pass.onAfterRender();
+
+			if ( ! pass.passThrough && pass.renderTarget ) {
+
+				backbuffers = pass.renderTarget.textures;
+
+			}
 
 		}
 

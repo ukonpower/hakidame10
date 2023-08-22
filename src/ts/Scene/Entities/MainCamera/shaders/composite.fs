@@ -1,6 +1,6 @@
 #include <common>
 
-uniform sampler2D sampler0;
+uniform sampler2D backbuffer0;
 uniform sampler2D uBloomTexture[4];
 
 uniform vec3 cameraPosition;
@@ -31,14 +31,14 @@ void main( void ) {
 	vec2 cuv = uv - 0.5;
 	float len = length(cuv);
 
-	col = texture( sampler0, vUv ).xyz;
-	col = filmic( col ) * 1.0;
+	col = texture( backbuffer0, vUv ).xyz;
+	// col = filmic( col ) * 1.0;
 
 	#pragma loop_start 4
 		col += texture( uBloomTexture[ LOOP_INDEX ], uv ).xyz * ( 0.5 + float(LOOP_INDEX) * 0.5 ) * 0.1;
 	#pragma loop_end
 
-	// col *= smoothstep( 1.0, 0.4, len );
+	col *= smoothstep( 1.0, 0.4, len );
 
 	outColor = vec4( col, 1.0 );
 

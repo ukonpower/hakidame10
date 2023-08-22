@@ -1,7 +1,7 @@
 #include <common>
 
-uniform sampler2D sampler0;
-uniform sampler2D sampler1;
+uniform sampler2D backbuffer0;
+uniform sampler2D uDepthTex;
 uniform vec4 uParams;
 uniform mat4 projectionMatrixInverse;
 
@@ -32,19 +32,19 @@ void main( void ) {
 	float _LensCoeff = uParams.w;
 
 	// Sample source colors.
-	vec2 mainTexSize = vec2( 1.0 ) / vec2( textureSize( sampler0, 0 ) );
+	vec2 mainTexSize = vec2( 1.0 ) / vec2( textureSize( backbuffer0, 0 ) );
 	vec3 duv = mainTexSize.xyx * vec3(0.5, 0.5, -0.5);
-	vec3 c0 = texture(sampler0, vUv - duv.xy).rgb;
-	vec3 c1 = texture(sampler0, vUv - duv.zy).rgb;
-	vec3 c2 = texture(sampler0, vUv + duv.zy).rgb;
-	vec3 c3 = texture(sampler0, vUv + duv.xy).rgb;
+	vec3 c0 = texture(backbuffer0, vUv - duv.xy).rgb;
+	vec3 c1 = texture(backbuffer0, vUv - duv.zy).rgb;
+	vec3 c2 = texture(backbuffer0, vUv + duv.zy).rgb;
+	vec3 c3 = texture(backbuffer0, vUv + duv.xy).rgb;
 
 	// Sample linear depths.
-	float d0 = sampleDepth(sampler1, vUv - duv.xy);
-	float d1 = sampleDepth(sampler1, vUv - duv.zy);
-	float d2 = sampleDepth(sampler1, vUv + duv.zy);
-	float d3 = sampleDepth(sampler1, vUv + duv.xy);
-	float d4 = sampleDepth(sampler1, vUv);
+	float d0 = sampleDepth(uDepthTex, vUv - duv.xy);
+	float d1 = sampleDepth(uDepthTex, vUv - duv.zy);
+	float d2 = sampleDepth(uDepthTex, vUv + duv.zy);
+	float d3 = sampleDepth(uDepthTex, vUv + duv.xy);
+	float d4 = sampleDepth(uDepthTex, vUv);
 	vec4 depths = vec4(d4, d4, d4, d4);
 
 	// Calculate the radiuses of CoCs at these sample points.

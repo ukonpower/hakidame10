@@ -10,6 +10,7 @@ export interface PostProcessPassParam extends MaterialParam{
 	clearColor?: Vector;
 	clearDepth?: number;
 	resolutionFactor?: number;
+	passThrough?: boolean;
 }
 
 import quadVert from './shaders/quad.vs';
@@ -23,6 +24,7 @@ export class PostProcessPass extends Material {
 	public clearDepth: number | null;
 
 	public resolutionFactor: number;
+	public passThrough: boolean;
 
 	constructor( param: PostProcessPassParam ) {
 
@@ -32,18 +34,18 @@ export class PostProcessPass extends Material {
 			power.createTexture().setting( { magFilter: gl.LINEAR, minFilter: gl.LINEAR } ),
 		] );
 
-
 		this.clearColor = param.clearColor ?? null;
 		this.clearDepth = param.clearDepth ?? null;
 		this.depthTest = param.depthTest !== undefined ? param.depthTest : false;
 		this.resolutionFactor = param.resolutionFactor || 1;
+		this.passThrough = param.passThrough ?? false;
 
 	}
 
 	public onAfterRender() {
 	}
 
-	protected resizeImpl( event: ComponentResizeEvent ): void {
+	public resize( event: ComponentResizeEvent ): void {
 
 		if ( this.renderTarget ) {
 
