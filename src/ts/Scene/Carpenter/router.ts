@@ -11,7 +11,7 @@ import { ECross } from '../Entities/Effects/ECross';
 import { EArea } from '../Entities/Effects/EArea';
 import { EGridLine } from '../Entities/Effects/EGridLine';
 import { Trails } from '../Entities/Trails';
-import { Content as Content9 } from '../Entities/Custom/Content9';
+import { Content, Content } from '../Entities/Custom/Content';
 import { Skybox } from '../Entities/Skybox';
 
 export const router = ( node: GLP.BLidgeNode ) => {
@@ -62,9 +62,9 @@ export const router = ( node: GLP.BLidgeNode ) => {
 
 	// custom
 
-	if ( node.class == "Content9" ) {
+	if ( node.class == "Content" ) {
 
-		return new Content9();
+		return new Content();
 
 	}
 

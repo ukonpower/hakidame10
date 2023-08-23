@@ -12,6 +12,7 @@ import ssaoFrag from './shaders/ssao.fs';
 import dofCoc from './shaders/dofCoc.fs';
 import dofComposite from './shaders/dofComposite.fs';
 import dofBokeh from './shaders/dofBokeh.fs';
+import motionBlurNeighborFrag from './shaders/motionBlurNeighbor.fs';
 import motionBlurFrag from './shaders/motionBlur.fs';
 import ssCompositeFrag from './shaders/ssComposite.fs';
 import compositeFrag from './shaders/composite.fs';
@@ -71,6 +72,7 @@ export class MainCamera extends GLP.Entity {
 
 	// motion blur
 
+	private motionBlurNeighbor: GLP.PostProcessPass;
 	private motionBlur: GLP.PostProcessPass;
 
 	// composite
@@ -341,13 +343,36 @@ export class MainCamera extends GLP.Entity {
 
 		// motion blur
 
-		// this.motionBlur = new GLP.PostProcessPass( {
-		// 	name: 'motionBlur',
-		// 	input: [ param.renderTarget.gBuffer.textures[ 4 ] ],
-		// 	frag: motionBlurFrag,
-		// 	uniforms: GLP.UniformsUtils.merge( {} ),
-		// 	renderTarget: this.rtDofComposite
-		// } );
+		this.motionBlurNeighbor = new GLP.PostProcessPass( {
+			name: 'motionBlurNeighbor',
+			frag: motionBlurNeighborFrag,
+			uniforms: GLP.UniformsUtils.merge( {
+				uVelTex: {
+					value: param.renderTarget.gBuffer.textures[ 4 ],
+					type: '1i'
+				}
+			} ),
+			renderTarget: new GLP.GLPowerFrameBuffer( gl ).setTexture( [
+				power.createTexture().setting( { type: gl.FLOAT, internalFormat: gl.RGBA32F, format: gl.RGBA } ),
+			] ),
+			resolutionFactor: 1 / 16,
+			passThrough: true,
+		} );
+
+		this.motionBlur = new GLP.PostProcessPass( {
+			name: 'motionBlur',
+			frag: motionBlurFrag,
+			uniforms: GLP.UniformsUtils.merge( {
+				uVelNeighborTex: {
+					value: this.motionBlurNeighbor.renderTarget!.textures[ 0 ],
+					type: '1i'
+				},
+				uVelTex: {
+					value: param.renderTarget.gBuffer.textures[ 4 ],
+					type: '1i'
+				}
+			} ),
+		} );
 
 		// fxaa
 
@@ -483,13 +508,15 @@ export class MainCamera extends GLP.Entity {
 		this.addComponent( "postprocess", new GLP.PostProcess( {
 			input: param.renderTarget.forwardBuffer.textures,
 			passes: [
-				this.lightShaft,
+				// this.lightShaft,
 				this.ssr,
 				this.ssao,
 				this.ssComposite,
 				this.dofCoc,
 				this.dofBokeh,
 				this.dofComposite,
+				this.motionBlurNeighbor,
+				this.motionBlur,
 				this.fxaa,
 				this.bloomBright,
 				...this.bloomBlur,

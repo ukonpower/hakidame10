@@ -37,4 +37,11 @@ export class Content extends GLP.Entity {
 
 	}
 
+	protected updateImpl( event: GLP.EntityUpdateEvent ): void {
+
+		this.position.x = Math.sin( event.time * 3.0 ) * 3.0;
+		this.position.y = Math.sin( event.time * 7.0 ) * 3.0;
+
+	}
+
 }
