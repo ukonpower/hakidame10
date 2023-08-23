@@ -28,9 +28,9 @@ void main(void) {
 
 	for( int i = 0; i < SAMPLE; i++ ) {
 
-		float w = float( i ) / float( SAMPLE ) * 2.0;
+		float w = float( i ) / float( SAMPLE ) * 1.0;
 
-		sum += texture(backbuffer0, vUv - vel * w ).xyz;
+		sum += texture(backbuffer0, vUv - (velNeighbor) * w ).xyz;
 
 	}
 
@@ -38,6 +38,7 @@ void main(void) {
 
 	outColor = vec4(sum, 1.0);
 
-	// outColor += vec4( abs(vel * 10.0), 0.0, 1.0 );
+	// outColor += vec4( abs(velNeighbor * 10.0), 0.0, 1.0 ) * 0.2;
+	// outColor += vec4( abs(vel * 10.0), 0.0, 1.0 ) * 0.2;
 
 }
