@@ -86,10 +86,18 @@ class App {
 
 			this.animate();
 
+			setTimeout( () => {
+
+				this.ready = false;
+
+			}, ( 500 ) );
+
 		}
 
 
 	}
+
+	private ready: boolean = true;
 
 	private animate() {
 
@@ -101,7 +109,11 @@ class App {
 
 		this.scene.update();
 
-		window.requestAnimationFrame( this.animate.bind( this ) );
+		if ( this.ready ) {
+
+			window.requestAnimationFrame( this.animate.bind( this ) );
+
+		}
 
 	}
 

@@ -388,7 +388,11 @@ export class MainCamera extends GLP.Entity {
 				uVelTex: {
 					value: param.renderTarget.gBuffer.textures[ 4 ],
 					type: '1i'
-				}
+				},
+				uDepthTexture: {
+					value: param.renderTarget.gBuffer.depthTexture,
+					type: '1i'
+				},
 			} ),
 		} );
 
