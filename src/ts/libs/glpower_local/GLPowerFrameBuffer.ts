@@ -109,6 +109,8 @@ export class GLPowerFrameBuffer {
 
 		}
 
+		this.size.floor();
+
 		this.setTexture( this.textures );
 
 		this.textures.forEach( t => {

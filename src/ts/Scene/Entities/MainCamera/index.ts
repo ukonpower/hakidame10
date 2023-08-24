@@ -12,6 +12,7 @@ import ssaoFrag from './shaders/ssao.fs';
 import dofCoc from './shaders/dofCoc.fs';
 import dofComposite from './shaders/dofComposite.fs';
 import dofBokeh from './shaders/dofBokeh.fs';
+import motionBlurTileFrag from './shaders/motionBlurTile.fs';
 import motionBlurNeighborFrag from './shaders/motionBlurNeighbor.fs';
 import motionBlurFrag from './shaders/motionBlur.fs';
 import ssCompositeFrag from './shaders/ssComposite.fs';
@@ -72,6 +73,7 @@ export class MainCamera extends GLP.Entity {
 
 	// motion blur
 
+	private motionBlurTile: GLP.PostProcessPass;
 	private motionBlurNeighbor: GLP.PostProcessPass;
 	private motionBlur: GLP.PostProcessPass;
 
@@ -343,12 +345,28 @@ export class MainCamera extends GLP.Entity {
 
 		// motion blur
 
+		this.motionBlurTile = new GLP.PostProcessPass( {
+			name: 'motionBlurTile',
+			frag: motionBlurTileFrag,
+			uniforms: GLP.UniformsUtils.merge( {
+				uVelTex: {
+					value: param.renderTarget.gBuffer.textures[ 4 ],
+					type: '1i'
+				}
+			} ),
+			renderTarget: new GLP.GLPowerFrameBuffer( gl ).setTexture( [
+				power.createTexture().setting( { type: gl.FLOAT, internalFormat: gl.RGBA32F, format: gl.RGBA } ),
+			] ),
+			resolutionFactor: 1 / 16,
+			passThrough: true,
+		} );
+
 		this.motionBlurNeighbor = new GLP.PostProcessPass( {
 			name: 'motionBlurNeighbor',
 			frag: motionBlurNeighborFrag,
 			uniforms: GLP.UniformsUtils.merge( {
 				uVelTex: {
-					value: param.renderTarget.gBuffer.textures[ 4 ],
+					value: this.motionBlurTile.renderTarget!.textures[ 0 ],
 					type: '1i'
 				}
 			} ),
@@ -515,6 +533,7 @@ export class MainCamera extends GLP.Entity {
 				this.dofCoc,
 				this.dofBokeh,
 				this.dofComposite,
+				this.motionBlurTile,
 				this.motionBlurNeighbor,
 				this.motionBlur,
 				this.fxaa,

@@ -14,31 +14,36 @@ layout (location = 0) out vec4 outColor;
 #define SAMPLE 8
 
 void main(void) {
+	
 	vec2 coord = vec2( gl_FragCoord.xy );
+
 	vec2 velNeighbor = texture( uVelNeighborTex, vUv ).xy;
-	vec2 vel = texture( uVelTex, vUv ).xy;
 
 	vec3 sum = vec3( 0.0 );
+	float weight = 0.0;
 
-	// if( length( velNeighbor ) > length( vel ) ) {
-
-	// 	vel = velNeighbor;
-		
-	// }
+	// weight = 1.0 / length( texture( uVelTex, vUv ).xy );
+	// sum = texture(backbuffer0, vUv ).xyz * weight;
 
 	for( int i = 0; i < SAMPLE; i++ ) {
 
-		float w = float( i ) / float( SAMPLE ) * 1.0;
+		float w = float( i ) / float( SAMPLE );
+		vec2 offsetUv = vUv + velNeighbor * ( w - 0.5 ) * 2.0;
 
-		sum += texture(backbuffer0, vUv - (velNeighbor) * w ).xyz;
+		vec2 vel = texture( uVelTex, offsetUv ).xy;
+		float vLen = length( vel );
+
+		weight += vLen;
+		sum += texture(backbuffer0, offsetUv ).xyz * vLen;
 
 	}
 
-	sum /= float( SAMPLE );
+	sum /= weight;
+	// sum /= float( SAMPLE );
 
 	outColor = vec4(sum, 1.0);
 
-	// outColor += vec4( abs(velNeighbor * 10.0), 0.0, 1.0 ) * 0.2;
+	// outColor += vec4( abs(velNeighbor * 80.0), 0.0, 1.0 ) * 0.2;
 	// outColor += vec4( abs(vel * 10.0), 0.0, 1.0 ) * 0.2;
 
 }

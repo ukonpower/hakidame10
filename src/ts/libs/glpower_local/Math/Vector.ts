@@ -226,6 +226,15 @@ export class Vector {
 
 	}
 
+	public floor() {
+
+		this.x = Math.floor( this.x );
+		this.y = Math.floor( this.y );
+		this.z = Math.floor( this.z );
+		this.w = Math.floor( this.w );
+
+	}
+
 	public copy( a: Vector | Types.Nullable<IVector4> ) {
 
 		this.x = a.x ?? 0;
