@@ -159,8 +159,5 @@ h1 {
 
 
 .dev {
-	visibility: hidden;
-	[data-dev="true"] {
-		visibility: visible;
-	}
+	visibility: visible;
 }

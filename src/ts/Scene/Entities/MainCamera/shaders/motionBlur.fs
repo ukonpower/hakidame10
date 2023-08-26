@@ -7,14 +7,16 @@ uniform sampler2D backbuffer0;
 uniform sampler2D uVelTex;
 uniform sampler2D uVelNeighborTex;
 uniform sampler2D uDepthTexture;
-
 uniform mat4 projectionMatrixInverse;
 uniform vec2 uPPPixelSize;
 
-#define EPSILON 0.0001
-#define SOFT_Z_EXTENT 0.001
-
 layout (location = 0) out vec4 outColor;
+
+#define EPSILON 0.0001
+#define SOFT_Z_EXTENT 0.1
+#define SAMPLE 16
+
+#include <noise>
 
 float cone( vec2 x, vec2 y, vec2 v ) {
 
@@ -48,7 +50,6 @@ vec2 getVelocity(sampler2D velTex, vec2 uv)
     return velocity;
 }
 
-#define SAMPLE 16
 
 void main(void) {
 	
@@ -70,15 +71,15 @@ void main(void) {
 
 	}
 
-	// weight = 1.0 / length( getVelocity( uVelTex, X ).xy ) * 0.01;
-	weight = 0.001;
+	weight = 1.0;
+	weight = min( 1.0 / length( getVelocity( uVelTex, X ) ), 3.0 );
 	sum = texture(backbuffer0, X ).xyz * weight;
 
 	for( int i = 0; i < SAMPLE; i++ ) {
 
 		if( i == SAMPLE - 1 / 2 ) continue;
 
-		float j = 0.0; //jitter
+		float j = random(X + float( i ) * 0.1);;
 
 		float t = mix( -1.0, 1.0, ( float( i ) + j + 1.0 ) / ( float(SAMPLE) + 1.0 ) );
 
@@ -95,8 +96,8 @@ void main(void) {
 			cylinder( Y, X, getVelocity( uVelTex, Y ).xy ) * cylinder( X, Y, getVelocity( uVelTex, X ).xy ) * 2.0;
 
 
-		// alphaY += EPSILON;
-		
+		// alphaY *= 6.0;
+
 		weight += alphaY;
 		sum += alphaY * texture( backbuffer0, Y ).xyz;
 

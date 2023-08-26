@@ -9,7 +9,7 @@ void main( void ) {
 
 	#include <frag_in>
 
-	float size = 15.0;
+	float size = 12.0;
 	vec2 tile = step( vec2( 0.5 ), fract( vUv * size ) );
 	float t = tile.x;
 

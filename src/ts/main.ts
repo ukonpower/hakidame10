@@ -86,11 +86,18 @@ class App {
 
 			this.animate();
 
-			setTimeout( () => {
+			// window.onmousedown = () => {
 
-				// this.ready = false;
+			// 	this.ready = false;
 
-			}, ( 1000 ) );
+			// };
+
+			// window.onmouseup = () => {
+
+			// 	this.ready = true;
+			// 	this.animate();
+
+			// };
 
 		}
 

@@ -110,8 +110,8 @@ export class MainCamera extends GLP.Entity {
 
 		const lookAt = this.addComponent( 'lookAt', new LookAt() );
 
-		this.addComponent( 'shakeViewer', new ShakeViewer( 0.3, 1.0 ) );
-		this.addComponent( 'rotateViewer', new RotateViewer( 30.0 ) );
+		this.addComponent( 'shakeViewer', new ShakeViewer( 0.3, 3.0 ) );
+		this.addComponent( 'rotateViewer', new RotateViewer( 5.0 ) );
 
 		// resolution
 
@@ -542,17 +542,17 @@ export class MainCamera extends GLP.Entity {
 		this.addComponent( "postprocess", new GLP.PostProcess( {
 			input: param.renderTarget.forwardBuffer.textures,
 			passes: [
-				// this.lightShaft,
-				// this.ssr,
-				// this.ssao,
-				// this.ssComposite,
+				this.lightShaft,
+				this.ssr,
+				this.ssao,
+				this.ssComposite,
 				// this.dofCoc,
 				// this.dofBokeh,
 				// this.dofComposite,
 				this.motionBlurTile,
 				this.motionBlurNeighbor,
 				this.motionBlur,
-				// this.fxaa,
+				this.fxaa,
 				this.bloomBright,
 				...this.bloomBlur,
 				this.composite,
