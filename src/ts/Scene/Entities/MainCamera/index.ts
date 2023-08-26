@@ -111,7 +111,7 @@ export class MainCamera extends GLP.Entity {
 		const lookAt = this.addComponent( 'lookAt', new LookAt() );
 
 		this.addComponent( 'shakeViewer', new ShakeViewer( 0.3, 1.0 ) );
-		this.addComponent( 'rotateViewer', new RotateViewer( 1.0 ) );
+		this.addComponent( 'rotateViewer', new RotateViewer( 30.0 ) );
 
 		// resolution
 
@@ -355,11 +355,14 @@ export class MainCamera extends GLP.Entity {
 				uVelTex: {
 					value: param.renderTarget.gBuffer.textures[ 4 ],
 					type: '1i'
-				}
+				},
 			} ),
 			renderTarget: new GLP.GLPowerFrameBuffer( gl ).setTexture( [
 				power.createTexture().setting( { type: gl.FLOAT, internalFormat: gl.RGBA32F, format: gl.RGBA } ),
 			] ),
+			defines: {
+				"TILE": motionBlurTile,
+			},
 			resolutionRatio: 1 / motionBlurTile,
 			passThrough: true,
 		} );
@@ -373,6 +376,9 @@ export class MainCamera extends GLP.Entity {
 					type: '1i'
 				}
 			} ),
+			defines: {
+				"TILE": motionBlurTile,
+			},
 			renderTarget: new GLP.GLPowerFrameBuffer( gl ).setTexture( [
 				power.createTexture().setting( { type: gl.FLOAT, internalFormat: gl.RGBA32F, format: gl.RGBA } ),
 			] ),
@@ -397,6 +403,9 @@ export class MainCamera extends GLP.Entity {
 					type: '1i'
 				},
 			} ),
+			defines: {
+				"TILE": motionBlurTile,
+			},
 		} );
 
 		// fxaa

@@ -9,9 +9,10 @@ uniform sampler2D uVelNeighborTex;
 uniform sampler2D uDepthTexture;
 
 uniform mat4 projectionMatrixInverse;
-uniform vec2 uResolutionInv;
+uniform vec2 uPPPixelSize;
 
 #define EPSILON 0.0001
+#define SOFT_Z_EXTENT 0.001
 
 layout (location = 0) out vec4 outColor;
 
@@ -29,26 +30,21 @@ float cylinder( vec2 x, vec2 y, vec2 v ) {
 
 float softDepthCompare( float a, float b ) {
 
-	return clamp( 1.0 - (a - b) / 0.1, 0.0, 1.0 );
+	return clamp( 1.0 - (a - b) / SOFT_Z_EXTENT, 0.0, 1.0 );
 
 }
 
 float getLinearDepth( vec2 uv ) {
 	vec4 depthRayPos = projectionMatrixInverse * vec4( uv * 2.0 - 1.0, texture( uDepthTexture, vUv ).x * 2.0 - 1.0, 1.0 );
 	depthRayPos.xyz /= depthRayPos.w;	
-	return -depthRayPos.z;
+	return depthRayPos.z;
 }
 
 vec2 getVelocity(sampler2D velTex, vec2 uv) 
 {
     vec2 velocity = texture(velTex, uv).xy;
-
-    velocity *= 10.0;
+    velocity = normalize( velocity ) * clamp( length( velocity ), 0.5 * uPPPixelSize.y, float(TILE) * uPPPixelSize.y );
 	
-    float v = length(velocity);
-
-    velocity = velocity / (v + EPSILON) * clamp(v, 0.5 * uResolutionInv.y, 16.0 * uResolutionInv.y ); // 0.5px~Kpxのclamp
-
     return velocity;
 }
 
@@ -65,16 +61,17 @@ void main(void) {
 	vec3 sum = vec3( 0.0 );
 	float weight = 0.0;
 
-	vec2 harfPixelSize = uResolutionInv / 2.0;
+	vec2 harfPixelSize = uPPPixelSize / 2.0;
 
-	if( length( velNeighbor ) < harfPixelSize.y  ) {
+	if( length( velNeighbor ) <= uPPPixelSize.y  ) {
 
-		// outColor = texture( backbuffer0, vUv ) ;
-		// return;
+		outColor = texture( backbuffer0, vUv );
+		return;
 
 	}
 
-	weight = 1.0 / length( getVelocity( uVelTex, X ).xy );
+	// weight = 1.0 / length( getVelocity( uVelTex, X ).xy ) * 0.01;
+	weight = 0.001;
 	sum = texture(backbuffer0, X ).xyz * weight;
 
 	for( int i = 0; i < SAMPLE; i++ ) {
@@ -97,17 +94,26 @@ void main(void) {
 			b * cone( X, Y, getVelocity( uVelTex, X ).xy ) +
 			cylinder( Y, X, getVelocity( uVelTex, Y ).xy ) * cylinder( X, Y, getVelocity( uVelTex, X ).xy ) * 2.0;
 
-		alphaY *= 10.0;
 
+		// alphaY += EPSILON;
+		
 		weight += alphaY;
 		sum += alphaY * texture( backbuffer0, Y ).xyz;
 
 	}
 
 	sum /= weight;
-	outColor = vec4(sum, 1.0);
+	outColor = vec4(sum.x, sum.y, sum.z, 1.0);
+	// outColor = vec4(vec3(0.0), 1.0);
 
-	outColor += vec4(weight);
-	// outColor = texture( uVelTex, vUv );
+	// outColor = vec4( vec3( smoothstep( 0.0, 20.0, -getLinearDepth( vUv ) )), 1.0 );
+
+	// outColor += vec4(weight);
+	// outColor = vec4(0.0, 0.0, outColor.x, 1.0 );
+	// outColor += abs(texture( uVelNeighborTex, vUv )) * 20.0;
+
+	// outColor = vec4( , 1.0 );
+
+	// outColor += 1.0;
 
 }

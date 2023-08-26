@@ -30,6 +30,16 @@ export class PostProcessPass extends Material {
 
 		super( { ...param, vert: param.vert || quadVert } );
 
+		this.uniforms.uPPResolution = {
+			value: new Vector(),
+			type: '2fv'
+		};
+
+		this.uniforms.uPPPixelSize = {
+			value: new Vector(),
+			type: '2fv'
+		};
+
 		this.renderTarget = param.renderTarget !== undefined ? param.renderTarget : new GLPowerFrameBuffer( gl ).setTexture( [
 			power.createTexture().setting( { magFilter: gl.LINEAR, minFilter: gl.LINEAR } ),
 		] );
@@ -50,6 +60,9 @@ export class PostProcessPass extends Material {
 		if ( this.renderTarget ) {
 
 			this.renderTarget.setSize( event.resolution.clone().multiply( this.resolutionFactor ) );
+
+			this.uniforms.uPPResolution.value.copy( this.renderTarget.size );
+			this.uniforms.uPPPixelSize.value.set( 1.0 / this.renderTarget.size.x, 1.0 / this.renderTarget.size.y );
 
 		}
 

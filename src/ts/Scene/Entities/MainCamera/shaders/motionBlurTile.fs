@@ -4,13 +4,9 @@ precision highp float;
 in vec2 vUv;
 uniform sampler2D backbuffer0;
 uniform sampler2D uVelTex;
-uniform vec2 uResolution;
-uniform bool uIsVertical;
-uniform float blurRange;
+uniform vec2 uPPPixelSize;
 
 layout (location = 0) out vec4 outColor;
-
-#define NUM 16
 
 void main(void) {
 	vec2 coord = vec2( gl_FragCoord.xy );
@@ -18,13 +14,13 @@ void main(void) {
 
 	vec3 sum = vec3( 0.0 );
 
-	for( int i = 0; i < NUM; i++ ) {
+	for( int i = 0; i < TILE; i++ ) {
 
-		for( int j = 0; j < NUM; j++ ) {
+		for( int j = 0; j < TILE; j++ ) {
 
 			vec2 offset = vec2( 
-				( float(j) / float(NUM) - 0.5 ) * ( 1.0 / 16.0 ),
-				( float(i) / float(NUM) - 0.5 ) * ( 1.0 / 16.0 )
+				( float(j) / float(TILE - 1) - 0.5 ) * uPPPixelSize.x / float( TILE ),
+				( float(i) / float(TILE - 1) - 0.5 ) * uPPPixelSize.y / float( TILE )
 			);
 
 			vec2 currentVel = texture( uVelTex, vUv + offset ).xy;
@@ -39,6 +35,6 @@ void main(void) {
 
 	}
 
-	outColor = vec4( vel, 1.0, 1.0 );
+	outColor = vec4( vel + 0.0001, 0.0, 1.0 );
 
 }
