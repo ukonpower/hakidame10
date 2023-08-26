@@ -13,6 +13,8 @@ vNormal = (modelMatrix * vec4(outNormal, 0.0)).xyz;
 vPos = modelPosition.xyz;
 vMVPosition = mvPosition.xyz;
 vMVPPosition = gl_Position.xyz / gl_Position.w;
+
 vVelocity = vMVPPosition.xy - positionPrev.xy / positionPrev.w;
+vVelocity *= step( abs(vMVPPosition.x), 1.0 ) * step( abs(vMVPPosition.y), 1.0 );
 
 //]

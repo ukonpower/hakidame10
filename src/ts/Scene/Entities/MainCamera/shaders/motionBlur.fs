@@ -8,15 +8,16 @@ uniform sampler2D uVelTex;
 uniform sampler2D uVelNeighborTex;
 uniform sampler2D uDepthTexture;
 
-uniform vec2 uResolution;
+uniform mat4 projectionMatrixInverse;
+uniform vec2 uResolutionInv;
+
+#define EPSILON 0.0001
 
 layout (location = 0) out vec4 outColor;
 
-#define SAMPLE 8
-
 float cone( vec2 x, vec2 y, vec2 v ) {
 
-	return clamp( 1.0 - length( x- y ) / length( v ), 0.0, 1.0 ); 
+	return clamp( 1.0 - length( x - y ) / length( v ), 0.0, 1.0 ); 
 	
 }
 
@@ -32,18 +33,48 @@ float softDepthCompare( float a, float b ) {
 
 }
 
+float getLinearDepth( vec2 uv ) {
+	vec4 depthRayPos = projectionMatrixInverse * vec4( uv * 2.0 - 1.0, texture( uDepthTexture, vUv ).x * 2.0 - 1.0, 1.0 );
+	depthRayPos.xyz /= depthRayPos.w;	
+	return -depthRayPos.z;
+}
+
+vec2 getVelocity(sampler2D velTex, vec2 uv) 
+{
+    vec2 velocity = texture(velTex, uv).xy;
+
+    velocity *= 10.0;
+	
+    float v = length(velocity);
+
+    velocity = velocity / (v + EPSILON) * clamp(v, 0.5 * uResolutionInv.y, 16.0 * uResolutionInv.y ); // 0.5px~Kpxのclamp
+
+    return velocity;
+}
+
+#define SAMPLE 16
+
 void main(void) {
 	
 	vec2 X = vUv;
 	
 	vec2 coord = vec2( gl_FragCoord.xy );
 
-	vec2 velNeighbor = texture( uVelNeighborTex, X ).xy;
+	vec2 velNeighbor = getVelocity( uVelNeighborTex, X ).xy;
 
 	vec3 sum = vec3( 0.0 );
 	float weight = 0.0;
 
-	weight = 1.0 / length( texture( uVelTex, X ).xy );
+	vec2 harfPixelSize = uResolutionInv / 2.0;
+
+	if( length( velNeighbor ) < harfPixelSize.y  ) {
+
+		// outColor = texture( backbuffer0, vUv ) ;
+		// return;
+
+	}
+
+	weight = 1.0 / length( getVelocity( uVelTex, X ).xy );
 	sum = texture(backbuffer0, X ).xyz * weight;
 
 	for( int i = 0; i < SAMPLE; i++ ) {
@@ -54,17 +85,19 @@ void main(void) {
 
 		float t = mix( -1.0, 1.0, ( float( i ) + j + 1.0 ) / ( float(SAMPLE) + 1.0 ) );
 
-		vec2 Y = X + velNeighbor * t;
+		vec2 Y = X + velNeighbor * t + harfPixelSize;
 
-		float depthX = texture( uDepthTexture, X ).x;
-		float depthY = texture( uDepthTexture, Y ).x;
+		float depthX = getLinearDepth( X );
+		float depthY = getLinearDepth( Y );
 
 		float f = softDepthCompare( depthX, depthY );
-		float b = softDepthCompare( depthX, depthY );
+		float b = softDepthCompare( depthY, depthX );
 
-		float alphaY = f * cone( Y, X, texture( uVelTex, Y ).xy ) +
-			b * cone( X, Y, texture( uVelTex, X ).xy ) +
-			cylinder( Y, X, texture( uVelTex, Y ).xy ) * cylinder( X, Y, texture( uVelTex, X ).xy ) * 2.0;
+		float alphaY = f * cone( Y, X, getVelocity( uVelTex, Y ).xy ) +
+			b * cone( X, Y, getVelocity( uVelTex, X ).xy ) +
+			cylinder( Y, X, getVelocity( uVelTex, Y ).xy ) * cylinder( X, Y, getVelocity( uVelTex, X ).xy ) * 2.0;
+
+		alphaY *= 10.0;
 
 		weight += alphaY;
 		sum += alphaY * texture( backbuffer0, Y ).xyz;
@@ -73,5 +106,8 @@ void main(void) {
 
 	sum /= weight;
 	outColor = vec4(sum, 1.0);
+
+	outColor += vec4(weight);
+	// outColor = texture( uVelTex, vUv );
 
 }

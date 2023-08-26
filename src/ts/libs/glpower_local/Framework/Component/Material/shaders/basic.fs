@@ -5,7 +5,6 @@
 void main( void ) {
 
 	#include <frag_in>
-
 	#include <frag_out>
 
 } 

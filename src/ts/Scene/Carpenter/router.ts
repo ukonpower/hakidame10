@@ -13,6 +13,7 @@ import { EGridLine } from '../Entities/Effects/EGridLine';
 import { Trails } from '../Entities/Trails';
 import { Content, Content } from '../Entities/Custom/Content';
 import { Skybox } from '../Entities/Skybox';
+import { MonoTile } from '../Entities/Custom/MonoTile';
 
 export const router = ( node: GLP.BLidgeNode ) => {
 
@@ -65,6 +66,10 @@ export const router = ( node: GLP.BLidgeNode ) => {
 	if ( node.class == "Content" ) {
 
 		return new Content();
+
+	} else if ( node.class == "Tile" ) {
+
+		return new MonoTile();
 
 	}
 

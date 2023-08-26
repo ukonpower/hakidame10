@@ -19,6 +19,7 @@ import ssCompositeFrag from './shaders/ssComposite.fs';
 import compositeFrag from './shaders/composite.fs';
 import { OrbitControls } from '../../Components/OrbitControls';
 import { ShakeViewer } from '../../Components/ShakeViewer';
+import { RotateViewer } from '../../Components/RotateViewer';
 
 export class MainCamera extends GLP.Entity {
 
@@ -110,7 +111,7 @@ export class MainCamera extends GLP.Entity {
 		const lookAt = this.addComponent( 'lookAt', new LookAt() );
 
 		this.addComponent( 'shakeViewer', new ShakeViewer( 0.3, 1.0 ) );
-		// this.addComponent( 'rotateViewer', new RotateViewer( 2.0 ) );
+		this.addComponent( 'rotateViewer', new RotateViewer( 1.0 ) );
 
 		// resolution
 
@@ -155,7 +156,7 @@ export class MainCamera extends GLP.Entity {
 					type: '1i'
 				},
 			} ),
-			resolutionFactor: 0.5,
+			resolutionRatio: 0.5,
 			passThrough: true,
 		} );
 
@@ -203,7 +204,7 @@ export class MainCamera extends GLP.Entity {
 					type: '1i'
 				},
 			} ),
-			resolutionFactor: 0.5,
+			resolutionRatio: 0.5,
 			passThrough: true,
 		} );
 
@@ -247,7 +248,7 @@ export class MainCamera extends GLP.Entity {
 					type: '1i'
 				},
 			} ),
-			resolutionFactor: 0.2,
+			resolutionRatio: 0.2,
 			passThrough: true,
 		} );
 
@@ -306,7 +307,7 @@ export class MainCamera extends GLP.Entity {
 				power.createTexture().setting( { magFilter: gl.LINEAR, minFilter: gl.LINEAR, internalFormat: gl.RGBA16F, type: gl.HALF_FLOAT, format: gl.RGBA } ),
 			] ),
 			passThrough: true,
-			resolutionFactor: 0.5,
+			resolutionRatio: 0.5,
 		} );
 
 		this.dofBokeh = new GLP.PostProcessPass( {
@@ -326,7 +327,7 @@ export class MainCamera extends GLP.Entity {
 				power.createTexture().setting( { magFilter: gl.LINEAR, minFilter: gl.LINEAR } ),
 			] ),
 			passThrough: true,
-			resolutionFactor: 0.5,
+			resolutionRatio: 0.5,
 		} );
 
 		this.dofComposite = new GLP.PostProcessPass( {
@@ -345,6 +346,8 @@ export class MainCamera extends GLP.Entity {
 
 		// motion blur
 
+		const motionBlurTile = 16;
+
 		this.motionBlurTile = new GLP.PostProcessPass( {
 			name: 'motionBlurTile',
 			frag: motionBlurTileFrag,
@@ -357,7 +360,7 @@ export class MainCamera extends GLP.Entity {
 			renderTarget: new GLP.GLPowerFrameBuffer( gl ).setTexture( [
 				power.createTexture().setting( { type: gl.FLOAT, internalFormat: gl.RGBA32F, format: gl.RGBA } ),
 			] ),
-			resolutionFactor: 1 / 16,
+			resolutionRatio: 1 / motionBlurTile,
 			passThrough: true,
 		} );
 
@@ -373,14 +376,14 @@ export class MainCamera extends GLP.Entity {
 			renderTarget: new GLP.GLPowerFrameBuffer( gl ).setTexture( [
 				power.createTexture().setting( { type: gl.FLOAT, internalFormat: gl.RGBA32F, format: gl.RGBA } ),
 			] ),
-			resolutionFactor: 1 / 16,
+			resolutionRatio: 1 / motionBlurTile,
 			passThrough: true,
 		} );
 
 		this.motionBlur = new GLP.PostProcessPass( {
 			name: 'motionBlur',
 			frag: motionBlurFrag,
-			uniforms: GLP.UniformsUtils.merge( {
+			uniforms: GLP.UniformsUtils.merge( this.commonUniforms, {
 				uVelNeighborTex: {
 					value: this.motionBlurNeighbor.renderTarget!.textures[ 0 ],
 					type: '1i'
@@ -531,16 +534,16 @@ export class MainCamera extends GLP.Entity {
 			input: param.renderTarget.forwardBuffer.textures,
 			passes: [
 				// this.lightShaft,
-				this.ssr,
-				this.ssao,
-				this.ssComposite,
-				this.dofCoc,
-				this.dofBokeh,
-				this.dofComposite,
+				// this.ssr,
+				// this.ssao,
+				// this.ssComposite,
+				// this.dofCoc,
+				// this.dofBokeh,
+				// this.dofComposite,
 				this.motionBlurTile,
 				this.motionBlurNeighbor,
 				this.motionBlur,
-				this.fxaa,
+				// this.fxaa,
 				this.bloomBright,
 				...this.bloomBlur,
 				this.composite,

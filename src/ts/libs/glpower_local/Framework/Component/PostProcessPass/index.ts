@@ -9,7 +9,7 @@ export interface PostProcessPassParam extends MaterialParam{
 	renderTarget?: GLPowerFrameBuffer | null,
 	clearColor?: Vector;
 	clearDepth?: number;
-	resolutionFactor?: number;
+	resolutionRatio?: number;
 	passThrough?: boolean;
 }
 
@@ -37,7 +37,7 @@ export class PostProcessPass extends Material {
 		this.clearColor = param.clearColor ?? null;
 		this.clearDepth = param.clearDepth ?? null;
 		this.depthTest = param.depthTest !== undefined ? param.depthTest : false;
-		this.resolutionFactor = param.resolutionFactor || 1;
+		this.resolutionFactor = param.resolutionRatio || 1;
 		this.passThrough = param.passThrough ?? false;
 
 	}

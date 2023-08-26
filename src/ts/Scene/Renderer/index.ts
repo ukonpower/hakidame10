@@ -1,6 +1,6 @@
 import * as GLP from 'glpower';
 
-import { gl, gl, gpuState, power } from "~/ts/Globals";
+import { gl, gpuState, power } from "~/ts/Globals";
 import { ProgramManager } from "./ProgramManager";
 import { shaderParse } from "./ShaderParser";
 import { DeferredPostProcess } from './DeferredPostProcess';
