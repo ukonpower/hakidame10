@@ -52,7 +52,9 @@ class App {
 
 		if ( process.env.NODE_ENV == 'development' ) {
 
-			if ( gpuState ) {
+			const debug = false;
+
+			if ( gpuState && debug ) {
 
 				const memoryElm = document.createElement( 'div' );
 				memoryElm.classList.add( "dev" );
@@ -86,25 +88,10 @@ class App {
 
 			this.animate();
 
-			// window.onmousedown = () => {
-
-			// 	this.ready = false;
-
-			// };
-
-			// window.onmouseup = () => {
-
-			// 	this.ready = true;
-			// 	this.animate();
-
-			// };
-
 		}
 
 
 	}
-
-	private ready: boolean = true;
 
 	private animate() {
 
@@ -116,11 +103,7 @@ class App {
 
 		this.scene.update();
 
-		if ( this.ready ) {
-
-			window.requestAnimationFrame( this.animate.bind( this ) );
-
-		}
+		window.requestAnimationFrame( this.animate.bind( this ) );
 
 	}
 
@@ -129,7 +112,6 @@ class App {
 		const canvasAspect = window.innerWidth / window.innerHeight;
 
 		const scale = canvasAspect < 1.0 ? Math.min( 1.5, window.devicePixelRatio ) : 1.0;
-		// scale *= 0.5;
 
 		const blkRatioX = canvasAspect < 1.0 ? 0.75 : 1.0;
 		const blkRatioY = canvasAspect < 1.0 ? 0.7 : 0.5;
